@@ -4,11 +4,10 @@ const url = require("url")
 const express = require("express")
 const bodyParser = require("body-parser")
 const cookieParser = require("cookie-parser")
-const session = require("cookie-session")
+const cookieSession = require("cookie-session")
 const fs = require("fs")
 const formidable = require("formidable")
 const bcrypt = require("bcrypt")
-const saltRounds = 10
 
 const config = require("./config")
 
@@ -30,8 +29,8 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     {username: ""}
   )
 
-  app.use(session({
-    username: "session",
+  app.use(cookieSession({
+    name: "session",
     keys: [config.secretKey]
   }))
 
@@ -44,12 +43,16 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
 
   app.set("view engine", "ejs")
 
-  app.get("/signin.html", function(req, res) {
-    res.sendFile(__dirname + "/views/signin.html")
+  app.get("/", function (req, res) {
+    res.redirect("/signin")
   })
 
-  app.get("/signup.html", function(req, res) {
-    res.sendFile(__dirname + "/views/signup.html")
+  app.get("/signin", function(req, res) {
+    res.render("signin.ejs")
+  })
+
+  app.get("/signup", function(req, res) {
+    res.render("signup.ejs")
   })
 
   app.get("/index", function(req, res) {
@@ -87,10 +90,6 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
       }
     })
   }
-
-  app.get("/", function (req, res) {
-    res.sendFile(__dirname + "/views/signup.html")
-  })
 
   app.post("/signup", function(req, res) {
     const username = req.body.username
