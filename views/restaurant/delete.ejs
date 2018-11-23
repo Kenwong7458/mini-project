@@ -12,7 +12,7 @@
     <% for (const r of restaurants) { %>
     	<li>
         <div style="display: flex;">
-          <%= r.restaurantName %>
+          <%= r.name %>
           <form method="POST">
             <input type="hidden" name="id" value="<%= r._id %>"/>
             <input type="submit" value="delete"/>

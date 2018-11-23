@@ -6,28 +6,66 @@
     <title></title>
 </head>
 <body>
-    <h1>Restaurant info.</h1>
-    <%= restaurant.restaurantName %>
-    <br>
-    <img src="data:image/jpeg;base64,<%=restaurant.image%>" width="200" height="100" alt="restaurant pic">
-    <br>
-    <%= restaurant.borough %>
-    <br>
-    <%= restaurant.cuisine %>
-    <br>
-    <%= restaurant.street %>
-    <br>
-    <%= restaurant.building %>
-    <br>
-    <%= restaurant.zipcode %>
-    <br>
-    <%= restaurant.lat %>
-    <br>
-    <%= restaurant.lng %>
-    <br>
-    <%= restaurant.owner %>
-    <br>
-    <br>
-    <a href="/">back to menu</a>
+  <h1>Restaurant info.</h1>
+
+  <a href="/">back to menu</a>
+
+  <form action="/restaurant/delete" method="POST">
+    <input type="hidden" name="id" value="<%= restaurant._id %>" />
+    <input type="submit" value="delete"/>
+  </form>
+
+  <form action="/restaurant/update" method="GET">
+    <input type="hidden" name="id" value="<%= restaurant._id %>" />
+    <input type="submit" value="update"/>
+  </form>
+
+  <table border="1">
+    <tr>
+      <th>Owner</th>
+      <td><%= restaurant.owner %></td>
+    </tr>
+    <tr>
+      <th>Name</th>
+      <td><%= restaurant.name %></td>
+    </tr>
+    <tr>
+      <th>Borough</th>
+      <td><%= restaurant.borough %></td>
+    </tr>
+    <tr>
+      <th>Cuisine</th>
+      <td><%= restaurant.cuisine %></td>
+    </tr>
+
+    <% if (restaurant.address) { %>
+      <% const addr = restaurant.address %>
+      <tr>
+        <th>Street</th>
+        <td><%= addr.street %></td>
+      </tr>
+      <tr>
+        <th>Building</th>
+        <td><%= addr.building %></td>
+      </tr>
+      <tr>
+        <th>Zipcode</th>
+        <td><%= addr.zipcode %></td>
+      </tr>
+      <% if (addr.coord) { %>
+        <tr>
+          <th>Coord</th>
+          <td>[<%= addr.coord[0] %>, <%= addr.coord[1] %>]</td>
+        </tr>
+      <% } %>
+    <% } %>
+  </table>
+
+  <% if (restaurant.photo) { %>
+    <img src="data:<%= restaurant.photoMimetype %>;base64,<%= restaurant.photo %>"
+      width="200"
+      height="100"
+      alt="restaurant pic">
+  <% } %>
 </body>
 </html>

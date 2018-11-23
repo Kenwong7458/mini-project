@@ -18,13 +18,55 @@ const assert = require("assert")
 const ObjectID = require("mongodb").ObjectID
 
 
+function loginRequired(req, res, next) {
+  if (req.session.username) {
+    next()
+  } else {
+    req.flash("info", "Please login first")
+    res.redirect("/signin")
+  }
+}
+
+function assign(dest, src, keys) {
+  for (const k of keys) {
+    if (src[k]) dest[k] = src[k]
+  }
+}
+
+function parsePhotoDocument(body, owner) {
+  const doc = {owner}
+  const address = {}
+
+  assign(doc, body, ["name", "borough", "cuisine"])
+  assign(address, body, ["street", "building", "zipcode"])
+
+  if (body.photo) {
+    doc.photo = body.photo.data.toString("base64")
+    doc.photoMimetype = body.photo.type
+  }
+
+  if (body.lat && body.lng) {
+    address.coord = [+body.lat, +body.lng]
+  }
+
+  if (Object.keys(address).length > 0) {
+    doc.address = address
+  }
+
+  return doc
+}
 
 MongoClient.connect(config.mongodbURL, function(err, db) {
 
   const app = express()
 
-  app.listen(8099, function() {
-    console.log("Running on port 8099")
+  app.listen(config.port, function() {
+    console.log("Running on port " + config.port)
+  })
+
+  app.use(function (req, res, next) {
+    console.log(req.method, req.url)
+    next()
   })
 
   app.use(cookieSession({
@@ -39,7 +81,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
   app.use(function (req, res, next) {
     const readFile = util.promisify(fs.readFile)
 
-    if (req.accepts("multipart/form-data")) {
+    if (req.is("multipart/form-data")) {
       const form = new formidable.IncomingForm()
 
       form.parse(req, function (err, fields, files) {
@@ -76,28 +118,34 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
 
   app.use(flash())
 
+  app.use(function (req, res, next) {
+    res.locals.username = req.session.username
+    res.locals.messages = req.flash("info")
+    next()
+  })
+
 
   app.set("view engine", "ejs")
 
-  app.get("/", function (req, res) {
-    res.render("index.ejs", {username: req.session.username})
+  app.get("/", loginRequired, function (req, res) {
+    res.render("index.ejs")
   })
 
   app.get("/signin", function(req, res) {
-    res.render("signin.ejs", {messages: req.flash("info")})
+    res.render("signin.ejs")
   })
 
   app.get("/signup", function(req, res) {
-    res.render("signup.ejs", {messages: req.flash("info")})
+    res.render("signup.ejs")
   })
 
-  app.get("/restaurant/new", function(req, res) {
-    res.render("restaurant/new.ejs", {username: req.session.username})
+  app.get("/restaurant/new", loginRequired, function(req, res) {
+    res.render("restaurant/new.ejs")
   })
 
   app.get("/restaurant/list", function(req, res) {
     db.collection("restaurants")
-      .find({}, {restaurantName: 1})
+      .find({}, {name: 1})
       .toArray(function (err, restaurants) {
         assert.equal(err, null)
 
@@ -116,7 +164,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
 
   app.get("/restaurant/delete", function(req, res) {
     db.collection("restaurants")
-      .find({}, {restaurantName: 1})
+      .find({}, {_id: 1, name: 1})
       .toArray(function(err, restaurants) {
         assert.equal(err, null)
 
@@ -183,81 +231,15 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
   })
 
   app.post("/restaurant/new", function (req, res) {
-    function assign(dest, src, keys) {
-      for (const k of keys) {
-        if (src[k]) dest[k] = src[k]
-      }
-    }
-
-    const doc = {owner: req.session.username}
-    const address = {}
-
-    assign(doc, req.body, ["name", "borough", "cuisine"])
-    assign(address, req.body, ["street", "building", "zipcode"])
-
-    if (req.body.fileUpload) {
-      doc.photo = req.body.fileUpload.data.toString("base64")
-      doc.photoMimetype = req.body.fileUpload.type
-    }
-
-    if (req.body.lat && req.body.lng) {
-      address.coord = [+req.body.lat, +req.body.lng]
-    }
-
-    if (Object.keys(address).length > 0) {
-      doc.address = address
-    }
+    const doc = parsePhotoDocument(req.body, req.session.username)
 
     db.collection("restaurants").insertOne(doc, function(err) {
       assert.equal(err, null)
 
-      req.flash("Inserted 1 restaurant")
+      req.flash("info", "Inserted 1 restaurant")
       res.redirect("/")
     })
   })
-
-  /*
-  app.post("/restaurant/new", function(req, res) {
-    console.log("test multipart parser: ", req.body)
-    const form = new formidable.IncomingForm();
-    form.parse(req, function (err, fields, files) {
-      console.log(JSON.stringify(files))
-
-      var filename = files.fileUpload.path
-
-      if (files.fileUpload.type) {
-        var mimetype = files.fileUpload.type
-      }
-      console.log("filename = " + filename)
-      fs.readFile(filename, function(err,data) {
-        const newRest = {
-          "restaurantName": fields.restaurantName,
-          "borough": fields.borough,
-          "cuisine": fields.cuisine,
-          "street": fields.street,
-          "building": fields.building,
-          "zipcode": fields.zipcode,
-          "lat": fields.lat,
-          "lng": fields.lng,
-          "rate": "",
-          "owner": fields.owner,
-          "mimetype": mimetype,
-          "image": new Buffer(data).toString("base64")
-        }
-
-        if (err) throw err
-        db.collection("restaurants").insertOne(newRest, function(err) {
-          if (err) throw err
-          console.log("1 document inserted")
-        })
-      })
-
-
-      res.redirect("/")
-
-    })
-  })
-  */
 
   app.get("/restaurant/update", function(req, res) {
     const username = req.session.username
@@ -265,7 +247,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     if (req.query.id) {
       const restaurant_id = req.query.id
 
-      db.collection("restaurants").find({_id: ObjectID(restaurant_id)}).toArray(function (err, result) {
+      db.collection("restaurants").findOne({_id: ObjectID(restaurant_id)}, function (err, result) {
         assert.equal(err, null)
 
         res.render("restaurant/update_info.ejs", {result: result})
@@ -281,69 +263,25 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
   })
 
   app.post("/restaurant/update", function(req, res) {
-    const parsedURL = url.parse(req.url, true)
-    const queryAsObject = parsedURL.query
+    // WANRING: INCOMPLETE CODE ==========
+    const doc = parsePhotoDocument(req.body, req.session.username)
+    const criteria = {_id: ObjectID(req.body.id)}
+    const operator = {$set: doc}
 
-    var form = new formidable.IncomingForm();
-    form.parse(req, function (err, fields, files) {
-      console.log(JSON.stringify(files))
+    console.log(doc)
+    db.collection("restaurant").updateOne(criteria, operator, function (err) {
+      assert.equal(err, null)
 
-      var filename = files.fileUpload.path
-
-      if (files.fileUpload.type) {
-        var mimetype = files.fileUpload.type
-      }
-      console.log("filename = " + filename)
-      fs.readFile(filename, function(err,data) {
-        if (err) throw err
-        const criteria = {"_id": ObjectID(fields.restaurant_id)}
-        if (files.fileUpload.size == 0) {
-          const newValue = { $set: {
-            "restaurantName": fields.newRestaurantName,
-            "borough": fields.newBorough,
-            "cuisine": fields.newCuisine,
-            "street": fields.newStreet,
-            "building": fields.newBuilding,
-            "zipcode": fields.newZipcode,
-            "lat": fields.newLat,
-            "lng": fields.newLng,
-            "owner": fields.newOwner
-          }
-          }
-          db.collection("restaurants").updateOne(criteria, newValue, function(err) {
-            if (err) throw err
-            console.log("1 document updated")
-          })
-          res.redirect("/")
-        } else {
-          const newValue = { $set: {
-            "restaurantName": fields.newRestaurantName,
-            "borough": fields.newBorough,
-            "cuisine": fields.newCuisine,
-            "street": fields.newStreet,
-            "building": fields.newBuilding,
-            "zipcode": fields.newZipcode,
-            "lat": fields.newLat,
-            "lng": fields.newLng,
-            "owner": fields.newOwner,
-            "mimetype": mimetype,
-            "image": new Buffer(data).toString("base64")
-          }
-          }
-          db.collection("restaurants").updateOne(criteria, newValue, function(err) {
-            if (err) throw err
-            console.log("1 document updated")
-          })
-          res.redirect("/")
-        }
-      })
+      res.redirect("/restaurant/update?id=" + req.body.id)
     })
+    // ===================================
   })
 
   app.post("/restaurant/delete", function(req, res) {
-    db.collection("restaurants").deleteOne({"_id": ObjectID(req.params.id)}, function(err, obj) {
-      if (err) throw err
+    const doc = {"_id": ObjectID(req.body.id)}
 
+    db.collection("restaurants").deleteOne(doc, function(err) {
+      if (err) throw err
       res.redirect("/")
     })
   })

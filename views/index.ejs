@@ -6,6 +6,9 @@
   </head>
   <body>
     <h4>Welcome, <%= username %> !</h4>
+    <% for (const msg of messages) { %>
+        <p><%= msg %></p>
+    <% } %>
     <ol>
       <li>
         <a href="/restaurant/new">Create new restaurant documents</a>

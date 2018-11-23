@@ -5,26 +5,29 @@
         <title></title>
     </head>
     <body>
-        <h3>Update Restaurant Information for <%= result[0].restaurantName %></h3>
+        <%
+        const address = result.address
+        const coord = address && address.coord
+        %>
+        <h3>Update Restaurant Information for <%= result.name %></h3>
         <form method="POST" enctype="multipart/form-data">
-            Restaurant ID: <%= result[0]._id %> <br/>
-            <input type="hidden" name="restaurant_id" value="<%= result[0]._id %>">
-            Restaurant Name: <input type="text" name="newRestaurantName" value="<%= result[0].restaurantName %>" /><br/>
-            Borough: <input type="text" name="newBorough" value="<%= result[0].borough %>" /><br/>
-            Cuisine: <input type="text" name="newCuisine" value="<%= result[0].cuisine %>" /><br/>
+            Restaurant ID: <%= result._id %> <br/>
+            <input type="hidden" name="id" value="<%= result._id %>">
+            Restaurant Name: <input type="text" name="name" value="<%= result.name %>" /><br/>
+            Borough: <input type="text" name="borough" value="<%= result.borough %>" /><br/>
+            Cuisine: <input type="text" name="cuisine" value="<%= result.cuisine %>" /><br/>
             Adddress: <br/>
-            &nbsp; &nbsp; Street: <input type="text" name="newStreet" value="<%= result[0].street %>" /><br/>
-            &nbsp; &nbsp; Building: <input type="text" name="newBuilding" value="<%= result[0].building %>" /><br/>
-            &nbsp; &nbsp; Zipcode: <input type="text" name="newZipcode" value="<%= result[0].zipcode %>" /><br/>
+            &nbsp; &nbsp; Street: <input type="text" name="street" value="<%= address.street %>" /><br/>
+            &nbsp; &nbsp; Building: <input type="text" name="building" value="<%= address.building %>" /><br/>
+            &nbsp; &nbsp; Zipcode: <input type="text" name="zipcode" value="<%= address.zipcode %>" /><br/>
             &nbsp; &nbsp; Coord: <br/>
-            &nbsp; &nbsp; &nbsp; &nbsp; Lat: <input type="text" name="newLat" value="<%= result[0].lat %>" /><br/>
-            &nbsp; &nbsp; &nbsp; &nbsp; Lng: <input type="text" name="newLng" value="<%= result[0].lng %>" /><br/>
-            Owner: <input type="text" name="newOwner" value="<%= result[0].owner %>" /><br/>
+            &nbsp; &nbsp; &nbsp; &nbsp; Lat: <input type="text" name="lat" value="<%= coord[0] %>" /><br/>
+            &nbsp; &nbsp; &nbsp; &nbsp; Lng: <input type="text" name="lng" value="<%= coord[1] %>" /><br/>
             Photo: <br/>
-            <img src="data:<%= result[0].mimetype %>;base64,<%= result[0].image %>" width="400" height="300"> <br/>
-            Update photo: <input type="file" name="fileUpload" /><br/>
+            <img src="data:<%= result.photoMimetype %>;base64,<%= result.photo %>" width="400" height="300"> <br/>
+            Update photo: <input type="file" name="photo" /><br/>
             <br/>
-            <input type="submit" name="submit" value="Submit" />
+            <input type="submit" value="Submit" />
         </form>
     </body>
 </html>
