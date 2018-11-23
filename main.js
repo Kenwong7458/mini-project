@@ -1,6 +1,8 @@
 
 const url = require("url")
 
+const util = require("util")
+
 const express = require("express")
 const bodyParser = require("body-parser")
 const cookieSession = require("cookie-session")
@@ -34,6 +36,44 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
 
   app.use(bodyParser.urlencoded({extended: false}))
 
+  app.use(function (req, res, next) {
+    const readFile = util.promisify(fs.readFile)
+
+    if (req.accepts("multipart/form-data")) {
+      const form = new formidable.IncomingForm()
+
+      form.parse(req, function (err, fields, files) {
+        assert.equal(err)
+
+        ;(async function () {
+          const body = {}
+
+          for (const [key, value] of Object.entries(fields)) {
+            if (value === "") continue
+            body[key] = value
+          }
+
+          for (const [key, file] of Object.entries(files)) {
+            if (file.size === 0) continue
+            body[key] = {
+              data: await readFile(file.path),
+              type: file.type,
+              path: file.path,
+              size: file.size,
+              name: file.name
+            }
+          }
+
+          req.body = body
+
+          next()
+        })()
+      })
+    } else {
+      next()
+    }
+  })
+
   app.use(flash())
 
 
@@ -56,86 +96,47 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
   })
 
   app.get("/restaurant/list", function(req, res) {
-    const restaurants = []
-    db.collection("restaurants").find({}, {restaurantName: 1}, function(err, docs) {
-      docs.each(function(err, doc) {
-        if (err) throw err
+    db.collection("restaurants")
+      .find({}, {restaurantName: 1})
+      .toArray(function (err, restaurants) {
+        assert.equal(err, null)
 
-        if (doc) {
-          restaurants.push(doc)
-        } else {
-          res.render("restaurant/list.ejs", {restaurants: restaurants})
-        }
+        res.render("restaurant/list.ejs", {restaurants})
       })
-    })
   })
 
   app.get("/restaurant/show", function(req, res) {
-    const id = req.query.id
-    const restaurants = []
-    db.collection("restaurants").find({"_id": ObjectID(id)}, function(err, docs) {
-      docs.each(function(err, doc) {
-        if (err) throw err
+    db.collection("restaurants")
+      .findOne({"_id": ObjectID(req.query.id)}, function (err, restaurant) {
+        assert.equal(err, null)
 
-        if (doc) {
-          restaurants.push(doc)
-        } else {
-          res.render("restaurant/show.ejs", {restaurant: restaurants[0]})
-        }
+        res.render("restaurant/show.ejs", {restaurant})
       })
-    })
   })
 
   app.get("/restaurant/delete", function(req, res) {
-    const restaurants = []
-    db.collection("restaurants").find({}, {restaurantName: 1}, function(err, docs) {
-      docs.each(function(err, doc) {
-        if (err) throw err
+    db.collection("restaurants")
+      .find({}, {restaurantName: 1})
+      .toArray(function(err, restaurants) {
+        assert.equal(err, null)
 
-        if (doc) {
-          restaurants.push(doc)
-        } else {
-          res.render("restaurant/delete.ejs", {restaurants: restaurants})
-        }
+        res.render("restaurant/delete.ejs", {restaurants})
       })
-    })
   })
 
   app.get("/restaurant/search", function(req, res) {
     if (Object.keys(req.query).length > 0) {
-      const restName = req.query.restName
-      const restaurants = []
+      db.collection("restaurants")
+        .find({restaurantName: req.query.restName})
+        .toArray(function(err, restaurants) {
+          assert.equal(err, null)
 
-      db.collection("restaurants").find({restaurantName: restName}, function(err, docs) {
-        docs.each(function(err, doc) {
-          if (err) throw err
-
-          if (doc) {
-            restaurants.push(doc)
-          } else {
-            res.render("restaurant/list.ejs", {restaurants: restaurants})
-          }
+          res.render("restaurant/list.ejs", {restaurants})
         })
-      })
     } else {
       res.render("restaurant/search.ejs")
     }
   })
-
-
-  function queryAsArray(db, collection, query, callback) {
-    const result = []
-    const cursor = db.collection(collection).find(query)
-
-    cursor.each(function (err, doc) {
-      assert.equal(err, null)
-      if(doc !== null) {
-        result.push(doc)
-      } else {
-        callback(result)
-      }
-    })
-  }
 
   app.post("/signup", function(req, res) {
     const username = req.body.username
@@ -181,11 +182,44 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     })
   })
 
-  app.post("/restaurant/new", function(req, res) {
-    const parsedURL = url.parse(req.url, true)
-    const queryAsObject = parsedURL.query
+  app.post("/restaurant/new", function (req, res) {
+    function assign(dest, src, keys) {
+      for (const k of keys) {
+        if (src[k]) dest[k] = src[k]
+      }
+    }
 
-    var form = new formidable.IncomingForm();
+    const doc = {owner: req.session.username}
+    const address = {}
+
+    assign(doc, req.body, ["name", "borough", "cuisine"])
+    assign(address, req.body, ["street", "building", "zipcode"])
+
+    if (req.body.fileUpload) {
+      doc.photo = req.body.fileUpload.data.toString("base64")
+      doc.photoMimetype = req.body.fileUpload.type
+    }
+
+    if (req.body.lat && req.body.lng) {
+      address.coord = [+req.body.lat, +req.body.lng]
+    }
+
+    if (Object.keys(address).length > 0) {
+      doc.address = address
+    }
+
+    db.collection("restaurants").insertOne(doc, function(err) {
+      assert.equal(err, null)
+
+      req.flash("Inserted 1 restaurant")
+      res.redirect("/")
+    })
+  })
+
+  /*
+  app.post("/restaurant/new", function(req, res) {
+    console.log("test multipart parser: ", req.body)
+    const form = new formidable.IncomingForm();
     form.parse(req, function (err, fields, files) {
       console.log(JSON.stringify(files))
 
@@ -223,6 +257,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
 
     })
   })
+  */
 
   app.get("/restaurant/update", function(req, res) {
     const username = req.session.username

@@ -7,7 +7,7 @@
     <body>
         <h4>Create New Restaurant Document</h4>
         <form method="POST" enctype="multipart/form-data">
-            Restaurnat Name: <input type="text" name="restaurantName" required="required"/> <br/>
+            Restaurnat Name: <input type="text" name="name" required="required"/> <br/>
             Borough: <input type="text" name="borough" /> <br/>
             Cuisine: <input type="text" name="cuisine" /> <br/>
             Address: <br/>
@@ -17,11 +17,10 @@
             &nbsp; &nbsp; Coord: <br/>
             &nbsp; &nbsp; &nbsp; &nbsp; lat: <input type="text" name="lat" /> &nbsp;
                                         lng: <input type="text" name="lng" /><br />
-            Owner: <input type="text" name="owner" required="required" readonly value="<%= username %>"/><br/>
             <br/>
             Photo: <input type="file" name="fileUpload" /><br/>
 
-            <input type="submit" name="submit" /> <input type="reset" name="reset" />
+            <input type="submit" value="submit" /> <input type="reset" />
         </form>
     </body>
 </html>
