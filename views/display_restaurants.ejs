@@ -10,7 +10,7 @@
     <h2>Showing <%= restaurants.length %> document(s)</h2>
     <ol>
     <% for (var i in restaurants) { %>
-    	<li><a href="/displayOne/<%=restaurants[i]._id%>"><%= restaurants[i].restaurantName %></a></li>
+    	<li><a href="/restaurantInfo/<%=restaurants[i]._id%>"><%= restaurants[i].restaurantName %></a></li>
     <% } %>
     </ol>
     <a href="/">back to menu</a>
