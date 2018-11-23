@@ -25,10 +25,6 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     console.log("Running on port 8099")
   })
 
-  const users = new Array(
-    {username: ""}
-  )
-
   app.use(cookieSession({
     name: "session",
     keys: [config.secretKey]
@@ -56,25 +52,11 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
   })
 
   app.get("/index", function(req, res) {
-    const username = req.cookies.cookieName
-    res.render("index.ejs", {username: username})
+    res.render("index.ejs", {username: req.session.username})
   })
 
   app.get("/createNewRestaurant", function(req, res) {
-    const username = req.body.username
-    res.render("create_new_restaurant.ejs", {username})
-  })
-
-  app.get("/updateRestaurant", function(req, res) {
-    res.redirect("/updateRestaurantDocument")
-  })
-
-  app.get("/displayRestaurant.ejs", function(req, res) {
-    res.render("display_restaurant.ejs")
-  })
-
-  app.get("/displayRestaurant.ejs", function(req, res) {
-    res.render("search_restaurant.ejs")
+    res.render("create_new_restaurant.ejs", {username: req.session.username})
   })
 
   function queryAsArray(db, collection, query, callback) {
@@ -99,7 +81,9 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     if (password !== cpassword) {
       res.send("Your password does not match")
     } else {
-      queryAsArray(db, "users", {username: username}, function(result) {
+      db.collection("users").find({username: username}).toArray(function(err, result) {
+        assert.equal(err, null)
+
         if (result.length > 0) {
           res.send("This username is invalid because it had been used.")
         } else {
@@ -114,27 +98,18 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
   })
 
   app.post("/signin", function(req, res) {
-    const username = req.body.username
-    const password = req.body.password
+    const {username, password} = req.body
 
-    const myHash = "HashMyPassword"
+    db.collection("users").find({username, password}).count(function (err, count) {
+      assert.equal(err, null)
 
-    checkUsernamePassword(db, username, password, function(result) {
-      if (result.length == 1) {
-        req.session.authenticated = true
-        req.session.username = users.username
-        res.cookie("cookieName", req.body.username, { maxAge: 864000, httpOnly: true })
-        res.redirect("index")
-
+      if (count === 1) {
+        req.session.username = username
+        res.redirect("/index")
       } else {
         res.send("Your username or password is wrong.")
       }
     })
-
-    function checkUsernamePassword(db, username, password, callback){
-      queryAsArray(db, "users", {username:username, password:password}, callback)
-    }
-
   })
 
   app.post("/createOneRestaurant", function(req, res) {
@@ -180,15 +155,14 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     })
   })
 
-  app.get("/updateRestaurantDocument", function(req, res) {
-    const username = req.cookies.cookieName
-    searchRestaurantOwnedByUser(db, username, function(result){
-      res.render("show_restaurant_can_be_updated.ejs", {username: username, numberOfDoc: result.length, result: result})
-    })
+  app.get("/updateRestaurant", function(req, res) {
+    const username = req.session.username
 
-    function searchRestaurantOwnedByUser(db, username, callback) {
-      queryAsArray(db, "restaurants", {owner: username}, callback)
-    }
+    db.collection("restaurants").find({owner: username}).toArray(function (err, result) {
+      assert.equal(err, null)
+
+      res.render("show_restaurant_can_be_updated.ejs", {username, result})
+    })
   })
 
   app.get("/updateRestaurantInfo", function(req, res) {
