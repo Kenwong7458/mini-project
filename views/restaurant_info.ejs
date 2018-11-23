@@ -1,0 +1,33 @@
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+<body>
+    <h1>Restaurant info.</h1>
+    <%= restaurant.restaurantName %>
+    <br>
+    <img src="data:image/jpeg;base64,<%=restaurant.image%>" width="200" height="100" alt="restaurant pic">
+    <br>
+    <%= restaurant.borough %>
+    <br>
+    <%= restaurant.cuisine %>
+    <br>
+    <%= restaurant.street %>
+    <br>
+    <%= restaurant.building %>
+    <br>
+    <%= restaurant.zipcode %>
+    <br>
+    <%= restaurant.lat %>
+    <br>
+    <%= restaurant.lng %>
+    <br>
+    <%= restaurant.owner %>
+    <br>
+    <br>
+    <a href="/">back to menu</a>
+</body>
+</html>
