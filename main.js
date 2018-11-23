@@ -9,7 +9,6 @@ const fs = require("fs")
 const formidable = require("formidable")
 const bcrypt = require("bcrypt")
 const saltRounds = 10
-// const cookieSession = require("cookie-session")
 
 const MongoClient = require("mongodb").MongoClient
 const assert = require("assert")
@@ -54,15 +53,11 @@ MongoClient.connect(mongourl, function(err, db) {
     res.sendFile(__dirname + "/views/signup.html")
   })
 
-  //------------ Redirect to index.ejs after sign in -----------------//
   app.get("/index", function(req, res) {
     const username = req.cookies.cookieName
     res.render("index.ejs", {username: username})
   })
 
-  //------------------------------------------------------------------//
-
-  //------------ Handle routing of index.ejs -------------------------//
   app.get("/createNewRestaurant", function(req, res) {
     const username = req.body.username
     res.render("create_new_restaurant.ejs", {username})
@@ -79,8 +74,6 @@ MongoClient.connect(mongourl, function(err, db) {
   app.get("/displayRestaurant.ejs", function(req, res) {
     res.render("search_restaurant.ejs")
   })
-
-  //-------------------------------------------------------------//
 
   function queryAsArray(db, collection, query, callback) {
     const result = []
@@ -105,7 +98,6 @@ MongoClient.connect(mongourl, function(err, db) {
     const password = req.body.password
     const cpassword = req.body.cpassword
 
-    //------------------- FUNCTION: REGISTER ACCOUNT -------------------------//
     function register(username, res){
       findUserByUsername(db, username, function(result) {
         if (result.length > 0) {
@@ -122,7 +114,6 @@ MongoClient.connect(mongourl, function(err, db) {
       queryAsArray(db, "users", {username:username}, callback)
     }
 
-    //----------------- IF USERNAME IS VALID, INSERT USERNAME TO DATABASE -------------------//
     function addUserToDatabase(username, password, res){
       insertDocument(db, username, password, function() {
         res.send("Register successfully.")
@@ -302,8 +293,6 @@ MongoClient.connect(mongourl, function(err, db) {
           res.redirect("index")
         }
       })
-
-      //res.redirect("index")
     })
   })
 
