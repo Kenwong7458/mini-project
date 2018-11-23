@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        <h3>Update Restaurant Information for <%= result[0].restaurantName %></h3>
+        <form name="updateRestaurantInfo" method="post" action="http://localhost:8099/updateRestaurantToDatabase" enctype="multipart/form-data">
+            Restaurant ID: <%= result[0]._id %> <br/>
+            <input type="hidden" name="restaurant_id" value="<%= result[0]._id %>">
+            Restaurant Name: <input type="text" name="newRestaurantName" value="<%= result[0].restaurantName %>" /><br/>
+            Borough: <input type="text" name="newBorough" value="<%= result[0].borough %>" /><br/>
+            Cuisine: <input type="text" name="newCuisine" value="<%= result[0].cuisine %>" /><br/>
+            Adddress: <br/>
+            &nbsp; &nbsp; Street: <input type="text" name="newStreet" value="<%= result[0].street %>" /><br/>
+            &nbsp; &nbsp; Building: <input type="text" name="newBuilding" value="<%= result[0].building %>" /><br/>
+            &nbsp; &nbsp; Zipcode: <input type="text" name="newZipcode" value="<%= result[0].zipcode %>" /><br/>
+            &nbsp; &nbsp; Coord: <br/>
+            &nbsp; &nbsp; &nbsp; &nbsp; Lat: <input type="text" name="newLat" value="<%= result[0].lat %>" /><br/>
+            &nbsp; &nbsp; &nbsp; &nbsp; Lng: <input type="text" name="newLng" value="<%= result[0].lng %>" /><br/>
+            Owner: <input type="text" name="newOwner" value="<%= result[0].owner %>" /><br/>
+            Photo: <br/>
+            <img src="data:<%= result[0].mimetype %>;base64,<%= result[0].image %>" width="400" height="300"> <br/>
+            Update photo: <input type="file" name="fileUpload" /><br/>
+            <br/>
+            <input type="submit" name="submit" value="Submit" />
+        </form>
+    </body>
+</html>

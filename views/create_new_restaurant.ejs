@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        <h4>Create New Restaurant Document</h4>
+        <form name="createNewRestaurant" method="post" action="http://localhost:8099/createOneRestaurant" enctype="multipart/form-data">
+            Restaurnat Name: <input type="text" name="restaurantName" required="required"/> <br/>
+            Borough: <input type="text" name="borough" /> <br/>
+            Cuisine: <input type="text" name="cuisine" /> <br/>
+            Address: <br/>
+            &nbsp; &nbsp; Street: <input type="text" name="street" /> <br/>
+            &nbsp; &nbsp; Building: <input type="text" name="building" /><br/>
+            &nbsp; &nbsp; Zipcode: <input type="text" name="zipcode" /> <br/>
+            &nbsp; &nbsp; Coord: <br/>
+            &nbsp; &nbsp; &nbsp; &nbsp; lat: <input type="text" name="lat" /> &nbsp;
+                                        lng: <input type="text" name="lng" /><br />
+            Owner: <input type="text" name="owner" required="required"/><br/>
+            <br/>
+            Photo: <input type="file" name="fileUpload" /><br/>
+
+            <input type="submit" name="submit" /> <input type="reset" name="reset" />
+        </form>
+    </body>
+</html>

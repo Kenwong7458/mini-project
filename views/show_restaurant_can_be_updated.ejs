@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        <h3>Hi, <%= username %>. You can update <%= numberOfDoc %> restaurant(s) which is owned by you.</h3>
+        <ol>
+            <% for (var i in result) { %>
+                <li>
+                    <a href=/updateRestaurantInfo?restaurants_id=<%= result[i]._id %> >
+                        <%= result[i].restaurantName %>
+                    </a>
+                </li>
+            <% } %>
+        </ol>
+    </body>
+</html>
