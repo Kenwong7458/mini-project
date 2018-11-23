@@ -6,7 +6,7 @@
     </head>
     <body>
         <h3>Update Restaurant Information for <%= result[0].restaurantName %></h3>
-        <form name="updateRestaurantInfo" method="post" action="http://localhost:8099/updateRestaurantToDatabase" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data">
             Restaurant ID: <%= result[0]._id %> <br/>
             <input type="hidden" name="restaurant_id" value="<%= result[0]._id %>">
             Restaurant Name: <input type="text" name="newRestaurantName" value="<%= result[0].restaurantName %>" /><br/>

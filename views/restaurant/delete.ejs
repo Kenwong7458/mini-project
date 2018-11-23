@@ -13,7 +13,7 @@
     	<li>
         <div style="display: flex;">
           <%= r.restaurantName %>
-          <form action="/restaurant/delete" method="POST">
+          <form method="POST">
             <input type="hidden" name="id" value="<%= r._id %>"/>
             <input type="submit" value="delete"/>
           </form>

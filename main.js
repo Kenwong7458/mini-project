@@ -52,10 +52,10 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
   })
 
   app.get("/restaurant/new", function(req, res) {
-    res.render("create_new_restaurant.ejs", {username: req.session.username})
+    res.render("restaurant/new.ejs", {username: req.session.username})
   })
 
-  app.get("/restaurant", function(req, res) {
+  app.get("/restaurant/list", function(req, res) {
     const restaurants = []
     db.collection("restaurants").find({}, {restaurantName: 1}, function(err, docs) {
       docs.each(function(err, doc) {
@@ -64,7 +64,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
         if (doc) {
           restaurants.push(doc)
         } else {
-          res.render("display_restaurants.ejs", {restaurants: restaurants})
+          res.render("restaurant/list.ejs", {restaurants: restaurants})
         }
       })
     })
@@ -80,7 +80,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
         if (doc) {
           restaurants.push(doc)
         } else {
-          res.render("restaurant_info.ejs", {restaurant: restaurants[0]})
+          res.render("restaurant/show.ejs", {restaurant: restaurants[0]})
         }
       })
     })
@@ -95,7 +95,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
         if (doc) {
           restaurants.push(doc)
         } else {
-          res.render("delete_restaurants.ejs", {restaurants: restaurants})
+          res.render("restaurant/delete.ejs", {restaurants: restaurants})
         }
       })
     })
@@ -113,12 +113,12 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
           if (doc) {
             restaurants.push(doc)
           } else {
-            res.render("display_restaurants.ejs", {restaurants: restaurants})
+            res.render("restaurant/list.ejs", {restaurants: restaurants})
           }
         })
       })
     } else {
-      res.render("search.ejs")
+      res.render("restaurant/search.ejs")
     }
   })
 
@@ -181,7 +181,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     })
   })
 
-  app.post("/createOneRestaurant", function(req, res) {
+  app.post("/restaurant/new", function(req, res) {
     const parsedURL = url.parse(req.url, true)
     const queryAsObject = parsedURL.query
 
@@ -224,38 +224,28 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     })
   })
 
-  app.get("/updateRestaurant", function(req, res) {
+  app.get("/restaurant/update", function(req, res) {
     const username = req.session.username
 
-    db.collection("restaurants").find({owner: username}).toArray(function (err, result) {
-      assert.equal(err, null)
+    if (req.query.id) {
+      const restaurant_id = req.query.id
 
-      res.render("show_restaurant_can_be_updated.ejs", {username, result})
-    })
-  })
+      db.collection("restaurants").find({_id: ObjectID(restaurant_id)}).toArray(function (err, result) {
+        assert.equal(err, null)
 
-  app.get("/updateRestaurantInfo", function(req, res) {
-    const parsedURL = url.parse(req.url, true)
-    const queryAsObject = parsedURL.query
+        res.render("restaurant/update_info.ejs", {result: result})
+      })
 
-    const restaurant_id = queryAsObject.restaurants_id
+    } else {
+      db.collection("restaurants").find({owner: username}).toArray(function (err, result) {
+        assert.equal(err, null)
 
-    searchRestaurantById(db, restaurant_id, function(result) {
-      const contentType = result[0].mimetype
-      const image = new Buffer(result[0].image, "base64")
-      console.log(image)
-      res.render("update_restaurant_info.ejs", {result: result})
-
-    })
-
-    function searchRestaurantById(db, restaurant_id, callback) {
-      queryAsArray(db, "restaurants", {_id: ObjectID(restaurant_id)}, callback)
+        res.render("restaurant/update_list.ejs", {username, result})
+      })
     }
-
-
   })
 
-  app.post("/updateRestaurantToDatabase", function(req, res) {
+  app.post("/restaurant/update", function(req, res) {
     const parsedURL = url.parse(req.url, true)
     const queryAsObject = parsedURL.query
 
