@@ -96,42 +96,20 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     const password = req.body.password
     const cpassword = req.body.cpassword
 
-    function register(username, res){
-      findUserByUsername(db, username, function(result) {
-        if (result.length > 0) {
-          res.send("This username is invalid because it had been used.")
-          res.end()
-        }
-        else {
-          addUserToDatabase(username, password, res)
-        }
-      })
-    }
-
-    function findUserByUsername(db, username, callback) {
-      queryAsArray(db, "users", {username:username}, callback)
-    }
-
-    function addUserToDatabase(username, password, res){
-      insertDocument(db, username, password, function() {
-        res.send("Register successfully.")
-      })
-    }
-
-    function insertDocument (db, username, password, callback) {
-      db.collection("users").insertOne({
-        "username": username,
-        "password": password
-      }, function (err, result) {
-        assert.equal(err, null)
-        callback(result)
-      })
-    }
-
     if (password !== cpassword) {
       res.send("Your password does not match")
     } else {
-      register(username, res)
+      queryAsArray(db, "users", {username: username}, function(result) {
+        if (result.length > 0) {
+          res.send("This username is invalid because it had been used.")
+        } else {
+          const doc = {"username": username, "password": password}
+          db.collection("users").insertOne(doc, function (err) {
+            assert.equal(err, null)
+            res.send("Register successfully.")
+          })
+        }
+      })
     }
   })
 
