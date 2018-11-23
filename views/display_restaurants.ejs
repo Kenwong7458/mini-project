@@ -1,0 +1,18 @@
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+<body>
+    <h1>Restaurants</h1>
+    <h2>Showing <%= restaurants.length %> document(s)</h2>
+    <ol>
+    <% for (const r of restaurants) { %>
+    	<li><a href="/restaurant/show?id=<%= r._id %>"><%= r.restaurantName %></a></li>
+    <% } %>
+    </ol>
+    <a href="/">back to menu</a>
+</body>
+</html>

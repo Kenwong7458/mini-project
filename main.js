@@ -40,7 +40,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
   app.set("view engine", "ejs")
 
   app.get("/", function (req, res) {
-    res.redirect("/signin")
+    res.render("index.ejs", {username: req.session.username})
   })
 
   app.get("/signin", function(req, res) {
@@ -51,13 +51,77 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     res.render("signup.ejs", {messages: req.flash("info")})
   })
 
-  app.get("/index", function(req, res) {
-    res.render("index.ejs", {username: req.session.username})
-  })
-
-  app.get("/createNewRestaurant", function(req, res) {
+  app.get("/restaurant/new", function(req, res) {
     res.render("create_new_restaurant.ejs", {username: req.session.username})
   })
+
+  app.get("/restaurant", function(req, res) {
+    const restaurants = []
+    db.collection("restaurants").find({}, {restaurantName: 1}, function(err, docs) {
+      docs.each(function(err, doc) {
+        if (err) throw err
+
+        if (doc) {
+          restaurants.push(doc)
+        } else {
+          res.render("display_restaurants.ejs", {restaurants: restaurants})
+        }
+      })
+    })
+  })
+
+  app.get("/restaurant/show", function(req, res) {
+    const id = req.query.id
+    const restaurants = []
+    db.collection("restaurants").find({"_id": ObjectID(id)}, function(err, docs) {
+      docs.each(function(err, doc) {
+        if (err) throw err
+
+        if (doc) {
+          restaurants.push(doc)
+        } else {
+          res.render("restaurant_info.ejs", {restaurant: restaurants[0]})
+        }
+      })
+    })
+  })
+
+  app.get("/restaurant/delete", function(req, res) {
+    const restaurants = []
+    db.collection("restaurants").find({}, {restaurantName: 1}, function(err, docs) {
+      docs.each(function(err, doc) {
+        if (err) throw err
+
+        if (doc) {
+          restaurants.push(doc)
+        } else {
+          res.render("delete_restaurants.ejs", {restaurants: restaurants})
+        }
+      })
+    })
+  })
+
+  app.get("/restaurant/search", function(req, res) {
+    if (Object.keys(req.query).length > 0) {
+      const restName = req.query.restName
+      const restaurants = []
+
+      db.collection("restaurants").find({restaurantName: restName}, function(err, docs) {
+        docs.each(function(err, doc) {
+          if (err) throw err
+
+          if (doc) {
+            restaurants.push(doc)
+          } else {
+            res.render("display_restaurants.ejs", {restaurants: restaurants})
+          }
+        })
+      })
+    } else {
+      res.render("search.ejs")
+    }
+  })
+
 
   function queryAsArray(db, collection, query, callback) {
     const result = []
@@ -109,7 +173,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
 
       if (count === 1) {
         req.session.username = username
-        res.redirect("/index")
+        res.redirect("/")
       } else {
         req.flash("info", "Your username or password is wrong.")
         res.redirect("/signin")
@@ -155,7 +219,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
       })
 
 
-      res.redirect("index")
+      res.redirect("/")
 
     })
   })
@@ -225,7 +289,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
             if (err) throw err
             console.log("1 document updated")
           })
-          res.redirect("index")
+          res.redirect("/")
         } else {
           const newValue = { $set: {
             "restaurantName": fields.newRestaurantName,
@@ -245,9 +309,17 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
             if (err) throw err
             console.log("1 document updated")
           })
-          res.redirect("index")
+          res.redirect("/")
         }
       })
+    })
+  })
+
+  app.post("/restaurant/delete", function(req, res) {
+    db.collection("restaurants").deleteOne({"_id": ObjectID(req.params.id)}, function(err, obj) {
+      if (err) throw err
+
+      res.redirect("/")
     })
   })
 

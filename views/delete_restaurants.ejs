@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+<body>
+    <h1>Delete restaurants</h1>
+    <h2>Showing <%= restaurants.length %> document(s)</h2>
+    <ol>
+    <% for (const r of restaurants) { %>
+    	<li>
+        <div style="display: flex;">
+          <%= r.restaurantName %>
+          <form action="/restaurant/delete" method="POST">
+            <input type="hidden" name="id" value="<%= r._id %>"/>
+            <input type="submit" value="delete"/>
+          </form>
+        </div>
+      </li>
+    <% } %>
+    </ol>
+    <a href="/">back to menu</a>
+</body>
+</html>
