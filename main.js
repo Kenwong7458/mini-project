@@ -10,13 +10,15 @@ const formidable = require("formidable")
 const bcrypt = require("bcrypt")
 const saltRounds = 10
 
+const config = require("./config")
+
 const MongoClient = require("mongodb").MongoClient
 const assert = require("assert")
 const ObjectID = require("mongodb").ObjectID
-const mongourl = "mongodb://developer:developer123@ds163226.mlab.com:63226/381-mini-project"
 
 
-MongoClient.connect(mongourl, function(err, db) {
+
+MongoClient.connect(config.mongodbURL, function(err, db) {
 
   const app = express()
 
@@ -24,16 +26,13 @@ MongoClient.connect(mongourl, function(err, db) {
     console.log("Running on port 8099")
   })
 
-  const SECRETKEY1 = "COMPS381F"
-  const SECRETKEY2 = "NODEJS"
-
   const users = new Array(
     {username: ""}
   )
 
   app.use(session({
     username: "session",
-    keys: [SECRETKEY1, SECRETKEY2]
+    keys: [config.secretKey]
   }))
 
   app.use(bodyParser.json())
