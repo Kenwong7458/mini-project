@@ -6,6 +6,9 @@
     </head>
     <body>
         <h3>Sign up a new account.</h3>
+        <% for (const msg of messages) { %>
+          <p><%= msg %></p>
+        <% } %>
         <form name="signup" method="post" action="/signup">
             Username: <br />
             <input type="text" name="username" required="required"/> <br /><br />

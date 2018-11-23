@@ -3,10 +3,10 @@ const url = require("url")
 
 const express = require("express")
 const bodyParser = require("body-parser")
-const cookieParser = require("cookie-parser")
 const cookieSession = require("cookie-session")
 const fs = require("fs")
 const formidable = require("formidable")
+const flash = require("connect-flash")
 const bcrypt = require("bcrypt")
 
 const config = require("./config")
@@ -34,7 +34,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
 
   app.use(bodyParser.urlencoded({extended: false}))
 
-  app.use(cookieParser())
+  app.use(flash())
 
 
   app.set("view engine", "ejs")
@@ -44,11 +44,11 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
   })
 
   app.get("/signin", function(req, res) {
-    res.render("signin.ejs")
+    res.render("signin.ejs", {messages: req.flash("info")})
   })
 
   app.get("/signup", function(req, res) {
-    res.render("signup.ejs")
+    res.render("signup.ejs", {messages: req.flash("info")})
   })
 
   app.get("/index", function(req, res) {
@@ -79,18 +79,22 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     const cpassword = req.body.cpassword
 
     if (password !== cpassword) {
-      res.send("Your password does not match")
+      req.flash("info", "Your password does not match")
+      res.redirect("/signup")
     } else {
       db.collection("users").find({username: username}).toArray(function(err, result) {
         assert.equal(err, null)
 
         if (result.length > 0) {
-          res.send("This username is invalid because it had been used.")
+          req.flash("info", "This username is invalid because it had been used.")
+          res.redirect("/signup")
         } else {
           const doc = {"username": username, "password": password}
           db.collection("users").insertOne(doc, function (err) {
             assert.equal(err, null)
-            res.send("Register successfully.")
+
+            req.flash("info", "Register successfully, please login now")
+            res.redirect("/signin")
           })
         }
       })
@@ -107,7 +111,8 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
         req.session.username = username
         res.redirect("/index")
       } else {
-        res.send("Your username or password is wrong.")
+        req.flash("info", "Your username or password is wrong.")
+        res.redirect("/signin")
       }
     })
   })
