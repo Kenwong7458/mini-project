@@ -9,21 +9,18 @@
     <% for (const msg of messages) { %>
         <p><%= msg %></p>
     <% } %>
+    <form action="/logout" method="POST">
+      <input type="submit" value="logout">
+    </form>
     <ol>
       <li>
         <a href="/restaurant/new">Create new restaurant documents</a>
-      </li>
-      <li>
-        <a href="/restaurant/update">Update restaurant documents</a>
       </li>
       <li>
         <a href="/restaurant/list">Dispaly Restaurant</a>
       </li>
       <li>
         <a href="/restaurant/search">Search Restaurant</a>
-      </li>
-      <li>
-        <a href="/restaurant/delete">Delete Restaurant</a>
       </li>
     </ol>
   </body>

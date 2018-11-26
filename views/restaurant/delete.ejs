@@ -6,21 +6,12 @@
     <title></title>
 </head>
 <body>
-    <h1>Delete restaurants</h1>
-    <h2>Showing <%= restaurants.length %> document(s)</h2>
-    <ol>
-    <% for (const r of restaurants) { %>
-    	<li>
-        <div style="display: flex;">
-          <%= r.name %>
-          <form method="POST">
-            <input type="hidden" name="id" value="<%= r._id %>"/>
-            <input type="submit" value="delete"/>
-          </form>
-        </div>
-      </li>
-    <% } %>
-    </ol>
-    <a href="/">back to menu</a>
+    <h1>Delete restaurant</h1>
+    <p>Are your sure?</p>
+    <form method="POST">
+      <input type="hidden" name="id" value="<%= id %>" />
+      <input type="submit" value="Confirm"/>
+      <a href="/restaurant/show?id=<%= id %>">Back</a>
+    </form>
 </body>
 </html>

@@ -1,15 +1,12 @@
 
-const url = require("url")
-
 const util = require("util")
+const fs = require("fs")
 
 const express = require("express")
 const bodyParser = require("body-parser")
 const cookieSession = require("cookie-session")
-const fs = require("fs")
 const formidable = require("formidable")
 const flash = require("connect-flash")
-const bcrypt = require("bcrypt")
 
 const config = require("./config")
 
@@ -27,14 +24,13 @@ function loginRequired(req, res, next) {
   }
 }
 
-function assign(dest, src, keys) {
-  for (const k of keys) {
-    if (src[k]) dest[k] = src[k]
+function parsePhotoDocument(body, doc = {}) {
+  function assign(dest, src, keys) {
+    for (const k of keys) {
+      if (src[k]) dest[k] = src[k]
+    }
   }
-}
 
-function parsePhotoDocument(body, owner) {
-  const doc = {owner}
   const address = {}
 
   assign(doc, body, ["name", "borough", "cuisine"])
@@ -58,14 +54,38 @@ function parsePhotoDocument(body, owner) {
 
 MongoClient.connect(config.mongodbURL, function(err, db) {
 
+  function ownerRequired(req, res, next) {
+    const id = req.query.id || req.body.id
+
+    if (id) {
+      db.collection("restaurants")
+        .findOne({_id: ObjectID(id)}, {owner: 1}, function (err, result) {
+          assert.equal(err, null)
+
+          if (!result) {
+            next()
+          } else if (result.owner === req.session.username) {
+            next()
+          } else {
+            req.flash("info", "Only the owner can perform this operation")
+            res.redirect(req.headers.referer)
+          }
+        })
+    } else {
+      next()
+    }
+  }
+
   const app = express()
 
   app.listen(config.port, function() {
+    /* eslint-disable-next-line no-console */
     console.log("Running on port " + config.port)
   })
 
   app.use(function (req, res, next) {
-    console.log(req.method, req.url)
+    /* eslint-disable-next-line no-console */
+    console.log(new Date().toLocaleTimeString(), req.method, req.url)
     next()
   })
 
@@ -131,6 +151,17 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     res.render("index.ejs")
   })
 
+  app.get("/image", function (req, res) {
+    const projection = {photo: 1, photoMimetype: 1}
+    db.collection("restaurants")
+      .findOne({_id: ObjectID(req.query.id)}, projection, function (err, result) {
+        assert.equal(err, null)
+
+        res.type(result.photoMimetype)
+        res.send(Buffer.from(result.photo, "base64"))
+      })
+  })
+
   app.get("/signin", function(req, res) {
     res.render("signin.ejs")
   })
@@ -143,7 +174,7 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     res.render("restaurant/new.ejs")
   })
 
-  app.get("/restaurant/list", function(req, res) {
+  app.get("/restaurant/list", loginRequired, function(req, res) {
     db.collection("restaurants")
       .find({}, {name: 1})
       .toArray(function (err, restaurants) {
@@ -153,29 +184,24 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
       })
   })
 
-  app.get("/restaurant/show", function(req, res) {
+  app.get("/restaurant/show", loginRequired, function(req, res) {
     db.collection("restaurants")
-      .findOne({"_id": ObjectID(req.query.id)}, function (err, restaurant) {
+      .findOne({"_id": ObjectID(req.query.id)}, {photo: 0}, function (err, restaurant) {
         assert.equal(err, null)
 
         res.render("restaurant/show.ejs", {restaurant})
       })
   })
 
-  app.get("/restaurant/delete", function(req, res) {
-    db.collection("restaurants")
-      .find({}, {_id: 1, name: 1})
-      .toArray(function(err, restaurants) {
-        assert.equal(err, null)
-
-        res.render("restaurant/delete.ejs", {restaurants})
-      })
-  })
-
-  app.get("/restaurant/search", function(req, res) {
+  app.get("/restaurant/search", loginRequired, function(req, res) {
     if (Object.keys(req.query).length > 0) {
+      const criteria = {}
+      for (const [k, v] of Object.entries(req.query)) {
+        if (v) criteria[k] = v
+      }
+
       db.collection("restaurants")
-        .find({restaurantName: req.query.restName})
+        .find(criteria, {photo: 0})
         .toArray(function(err, restaurants) {
           assert.equal(err, null)
 
@@ -184,6 +210,38 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     } else {
       res.render("restaurant/search.ejs")
     }
+  })
+
+  app.get("/restaurant/rate", loginRequired, function(req, res) {
+    const id = req.query.id
+    const username = req.session.username
+
+    db.collection("restaurants")
+      .find({_id: ObjectID(id), "grades.user": username}).count(function (err, count) {
+        assert.equal(err, null)
+
+        if (count === 0) {
+          res.render("restaurant/rate.ejs", {id: id})
+        } else {
+          req.flash("info", "You have already rated this restaurant before.")
+          res.redirect(`/restaurant/show?id=${id}`)
+        }
+      })
+  })
+
+  app.get("/restaurant/delete", loginRequired, ownerRequired, function(req, res) {
+    res.render("restaurant/delete.ejs", {id: req.query.id})
+  })
+
+  app.get("/restaurant/update", loginRequired, ownerRequired, function(req, res) {
+    const restaurant_id = req.query.id
+
+    db.collection("restaurants")
+      .findOne({_id: ObjectID(restaurant_id)}, {photo: 0}, function (err, result) {
+        assert.equal(err, null)
+
+        res.render("restaurant/update.ejs", {result: result})
+      })
   })
 
   app.post("/signup", function(req, res) {
@@ -230,8 +288,15 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     })
   })
 
-  app.post("/restaurant/new", function (req, res) {
-    const doc = parsePhotoDocument(req.body, req.session.username)
+  app.post("/logout", function (req, res) {
+    req.session.username = null
+    res.redirect("/signin")
+  })
+
+  app.post("/restaurant/new", loginRequired, function (req, res) {
+    const doc = parsePhotoDocument(req.body)
+    doc.owner = req.session.username
+    doc.grades = []
 
     db.collection("restaurants").insertOne(doc, function(err) {
       assert.equal(err, null)
@@ -241,49 +306,59 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
     })
   })
 
-  app.get("/restaurant/update", function(req, res) {
-    const username = req.session.username
-
-    if (req.query.id) {
-      const restaurant_id = req.query.id
-
-      db.collection("restaurants").findOne({_id: ObjectID(restaurant_id)}, function (err, result) {
-        assert.equal(err, null)
-
-        res.render("restaurant/update_info.ejs", {result: result})
-      })
-
-    } else {
-      db.collection("restaurants").find({owner: username}).toArray(function (err, result) {
-        assert.equal(err, null)
-
-        res.render("restaurant/update_list.ejs", {username, result})
-      })
-    }
-  })
-
-  app.post("/restaurant/update", function(req, res) {
-    // WANRING: INCOMPLETE CODE ==========
-    const doc = parsePhotoDocument(req.body, req.session.username)
+  app.post("/restaurant/update", loginRequired, function(req, res) {
     const criteria = {_id: ObjectID(req.body.id)}
-    const operator = {$set: doc}
+    const doc = parsePhotoDocument(req.body)
 
-    console.log(doc)
-    db.collection("restaurant").updateOne(criteria, operator, function (err) {
+    const updater = {
+      $set: {},
+      $unset: {borough: true, cuisine: true, address: true}
+    }
+
+    for (const [k, v] of Object.entries(doc)) {
+      updater.$set[k] = v
+      delete updater.$unset[k]
+    }
+
+    if (req.body.deletePhoto === "on") {
+      updater.$unset.photo = true
+      updater.$unset.photoMimetype = true
+      delete updater.$set.photo
+      delete updater.$set.photoMimetype
+    }
+
+    if (Object.keys(updater.$unset).length === 0) {
+      delete updater.$unset
+    }
+
+    db.collection("restaurants").updateOne(criteria, updater, function (err) {
       assert.equal(err, null)
 
       res.redirect("/restaurant/update?id=" + req.body.id)
     })
-    // ===================================
   })
 
-  app.post("/restaurant/delete", function(req, res) {
+  app.post("/restaurant/delete", loginRequired, function(req, res) {
     const doc = {"_id": ObjectID(req.body.id)}
 
     db.collection("restaurants").deleteOne(doc, function(err) {
       if (err) throw err
       res.redirect("/")
     })
+  })
+
+  app.post("/restaurant/rate", loginRequired, function (req, res) {
+    const {id, score} = req.body
+    const username = req.session.username
+
+    const criteria = {_id: ObjectID(id)}
+    const updater = {$push: {grades: {user: username, score: +score}}}
+    db.collection("restaurants")
+      .updateOne(criteria, updater, function (err) {
+        assert.equal(err, null)
+
+        res.redirect("/")
+      })
   })
 
 })

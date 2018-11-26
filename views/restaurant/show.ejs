@@ -8,17 +8,14 @@
 <body>
   <h1>Restaurant info.</h1>
 
-  <a href="/">back to menu</a>
+  <a href="/">back</a>
+  <a href="/restaurant/rate?id=<%= restaurant._id %>">rate</a>
+  <a href="/restaurant/update?id=<%= restaurant._id %>">update</a>
+  <a href="/restaurant/delete?id=<%= restaurant._id %>">delete</a>
 
-  <form action="/restaurant/delete" method="POST">
-    <input type="hidden" name="id" value="<%= restaurant._id %>" />
-    <input type="submit" value="delete"/>
-  </form>
-
-  <form action="/restaurant/update" method="GET">
-    <input type="hidden" name="id" value="<%= restaurant._id %>" />
-    <input type="submit" value="update"/>
-  </form>
+  <% for (const msg of messages) { %>
+      <p><%= msg %></p>
+  <% } %>
 
   <table border="1">
     <tr>
@@ -61,10 +58,25 @@
     <% } %>
   </table>
 
-  <% if (restaurant.photo) { %>
-    <img src="data:<%= restaurant.photoMimetype %>;base64,<%= restaurant.photo %>"
-      width="200"
-      height="100"
+  <h2>Ratings</h2>
+
+  <table border="1">
+    <tr>
+      <th>User</th>
+      <th>Score</th>
+    </tr>
+    <% for (const {user, score} of restaurant.grades) { %>
+      <tr>
+        <td><%= user %></td>
+        <td><%= score %></td>
+      </tr>
+    <% } %>
+  </table>
+
+  <% if (restaurant.photoMimetype) { %>
+    <img src="/image/?id=<%= restaurant._id %>"
+      width="300"
+      height="200"
       alt="restaurant pic">
   <% } %>
 </body>

@@ -6,8 +6,8 @@
     </head>
     <body>
         <%
-        const address = result.address
-        const coord = address && address.coord
+        const address = result.address || {}
+        const coord = address.coord || {}
         %>
         <h3>Update Restaurant Information for <%= result.name %></h3>
         <form method="POST" enctype="multipart/form-data">
@@ -23,11 +23,16 @@
             &nbsp; &nbsp; Coord: <br/>
             &nbsp; &nbsp; &nbsp; &nbsp; Lat: <input type="text" name="lat" value="<%= coord[0] %>" /><br/>
             &nbsp; &nbsp; &nbsp; &nbsp; Lng: <input type="text" name="lng" value="<%= coord[1] %>" /><br/>
-            Photo: <br/>
-            <img src="data:<%= result.photoMimetype %>;base64,<%= result.photo %>" width="400" height="300"> <br/>
+            <br>
             Update photo: <input type="file" name="photo" /><br/>
-            <br/>
+            <span>Delete photo</span>
+            <input type="checkbox" name="deletePhoto"/>
+            <br>
             <input type="submit" value="Submit" />
+            <br>
+            <% if (result.photoMimetype) { %>
+              <img src="/image/?id=<%= result._id %>" />
+            <% } %>
         </form>
     </body>
 </html>
