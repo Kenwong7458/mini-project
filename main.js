@@ -8,12 +8,24 @@ const cookieSession = require("cookie-session")
 const formidable = require("formidable")
 const flash = require("connect-flash")
 
-const config = require("./config")
-
 const MongoClient = require("mongodb").MongoClient
 const assert = require("assert")
 const ObjectID = require("mongodb").ObjectID
 
+const config = {
+  port: getConfigVar("PORT"),
+  secretKey: getConfigVar("SECRET_KEY"),
+  mongodbURL: getConfigVar("MONGODB_URL")
+}
+
+function getConfigVar(name) {
+  if (!process.env[name]) {
+    /* eslint-disable-next-line no-console */
+    console.error(`Environment variable ${name} not set`)
+    process.exit(-1)
+  }
+  return process.env[name]
+}
 
 function loginRequired(req, res, next) {
   if (req.session.username) {
