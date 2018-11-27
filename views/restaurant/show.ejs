@@ -52,7 +52,11 @@
       <% if (addr.coord) { %>
         <tr>
           <th>Coord</th>
-          <td>[<%= addr.coord[0] %>, <%= addr.coord[1] %>]</td>
+          <td>
+              [<%= addr.coord[0] %>, <%= addr.coord[1] %>]
+              <a href="https://www.google.com/maps/search/?api=1&query=<%= addr.coord[0] %>,<%= addr.coord[1] %>">Google Map</a>
+          </td>
+
         </tr>
       <% } %>
     <% } %>
