@@ -265,6 +265,18 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
       })
   })
 
+  app.get("/api/restaurant/:type/:value", function (req, res) {
+    const {type, value} = req.params
+
+    db.collection("restaurants")
+      .find({[type]: value}).toArray(function (err, result) {
+        assert.equal(err, null)
+
+        res.json(result)
+      })
+  })
+
+
   app.post("/signup", function(req, res) {
     const username = req.body.username
     const password = req.body.password
