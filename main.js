@@ -27,6 +27,15 @@ function getConfigVar(name) {
   return process.env[name]
 }
 
+function guestRequired(req, res, next) {
+  if (req.session.username) {
+    req.flash("info", "You have logged in.")
+    res.redirect("/")
+  } else {
+    next()
+  }
+}
+
 function loginRequired(req, res, next) {
   if (req.session.username) {
     next()
@@ -174,11 +183,11 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
       })
   })
 
-  app.get("/signin", function(req, res) {
+  app.get("/signin", guestRequired, function(req, res) {
     res.render("signin.ejs")
   })
 
-  app.get("/signup", function(req, res) {
+  app.get("/signup", guestRequired, function(req, res) {
     res.render("signup.ejs")
   })
 
