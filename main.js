@@ -396,12 +396,13 @@ MongoClient.connect(config.mongodbURL, function(err, db) {
 
   app.post("/api/restaurant", function(req, res) {
     if (req.body.name && req.body.owner) {
-      const doc = Object.assign({_id: new ObjectID(), grades: []}, req.body)
+      const id = new ObjectID()
+      const doc = Object.assign({_id: id, grades: []}, req.body)
 
       db.collection("restaurants").insertOne(doc, function(err) {
         assert.equal(err, null)
 
-        res.json({status: "ok"})
+        res.json({status: "ok", _id: id})
       })
     } else {
       res.json({status: "failed"})
