@@ -57,7 +57,7 @@ function parsePhotoDocument(body, doc = {}) {
   assign(doc, body, ["name", "borough", "cuisine"])
   assign(address, body, ["street", "building", "zipcode"])
 
-  if (body.photo) {
+  if (body.photo && /image/.test(body.photo.type)) {
     doc.photo = body.photo.data.toString("base64")
     doc.photoMimetype = body.photo.type
   }
